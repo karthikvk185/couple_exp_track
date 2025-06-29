@@ -10,6 +10,16 @@ import "primereact/resources/themes/lara-light-blue/theme.css";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
 
+const CATEGORY_OPTIONS = [
+  "Food",
+  "Tour",
+  "Parking",
+  "Shopping",
+  "Online",
+  "Other",
+  "Travel"
+];
+
 const AddExpense = ({ user }) => {
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(new Date());
@@ -22,12 +32,8 @@ const AddExpense = ({ user }) => {
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    fetch("https://us-central1-exp-t-7a56d.cloudfunctions.net/api/budgets")
-      .then((res) => res.json())
-      .then((data) => {
-        setCategories(data.map((b) => b.name));
-        setLoading(false);
-      });
+    setCategories(CATEGORY_OPTIONS);
+    setLoading(false);
   }, []);
 
   const handleAddTag = () => {
@@ -40,7 +46,7 @@ const AddExpense = ({ user }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!amount || !category) return;
-    fetch("https://us-central1-exp-t-7a56d.cloudfunctions.net/api/transactions", {
+    fetch("http://localhost:5000/transactions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

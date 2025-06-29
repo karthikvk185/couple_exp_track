@@ -1,7 +1,9 @@
 [
-    { "name": "food", "budget": 1000 },
-    { "name": "parking", "budget": 500 },
-    { "name": "shopping", "budget": 1500 },
-    { "name": "trip", "budget": 2000 },
-    { "name": "other", "budget": 300 }
+    { "name": "Food", "budget": 1000 },
+    { "name": "Tour", "budget": 2000 },
+    { "name": "Parking", "budget": 500 },
+    { "name": "Shopping", "budget": 1500 },
+    { "name": "Online", "budget": 800 },
+    { "name": "Other", "budget": 300 },
+    { "name": "Travel", "budget": 2500 }
   ]

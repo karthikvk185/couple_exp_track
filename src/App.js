@@ -14,7 +14,7 @@ const USERS = [
   { username: "ramas2025", password: "2025rama" },
 ];
 
-function Navbar() {
+function Navbar({ user, onLogout }) {
   const location = useLocation();
   const navigate = useNavigate();
   const showBack = location.pathname !== "/" && location.pathname !== "/login";
@@ -24,7 +24,9 @@ function Navbar() {
         <Button icon="pi pi-arrow-left" className="p-button-text p-button-lg" onClick={() => navigate(-1)} style={{ color: '#fff', fontSize: 22, marginRight: 8 }} aria-label="Back" />
       ) : <span style={{ width: 44, display: 'inline-block' }} />} {/* placeholder for alignment */}
       <span className="navbar-title">Couple Expense Tracker</span>
-      <span style={{ width: 44, display: 'inline-block' }} /> {/* right placeholder */}
+      {user ? (
+        <Button icon="pi pi-sign-out" className="p-button-text" style={{ color: '#fff', fontSize: 22, marginLeft: 8 }} onClick={onLogout} aria-label="Logout" />
+      ) : <span style={{ width: 44, display: 'inline-block' }} />} {/* right placeholder */}
     </div>
   );
 }
@@ -92,7 +94,7 @@ function App() {
 
   useEffect(() => {
     if (!user) return;
-    fetch("https://us-central1-exp-t-7a56d.cloudfunctions.net/api/transactions")
+    fetch("http://localhost:5000/transactions")
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch transactions");
         return res.json();
@@ -120,8 +122,7 @@ function App() {
   return (
     <Router>
       <div className="App">
-        <Navbar />
-        {user && <Button label="Logout" icon="pi pi-sign-out" className="p-button-text" style={{ position: 'absolute', right: 12, top: 62, zIndex: 200 }} onClick={handleLogout} />}
+        <Navbar user={user} onLogout={handleLogout} />
         <Routes>
           <Route path="/login" element={<Login onLogin={handleLogin} />} />
           <Route path="/" element={<PrivateRoute user={user}><Dashboard /></PrivateRoute>} />

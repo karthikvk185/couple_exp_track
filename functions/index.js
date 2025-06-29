@@ -23,7 +23,7 @@ async function connectDB() {
     transactionsCollection = db.collection("transactions"); // Store transactions in 'transactions' collection
     console.log("Connected to MongoDB successfully!");
     app.listen(5000, () => {
-      console.log("Server running on https://us-central1-exp-t-7a56d.cloudfunctions.net/api");
+      console.log("Server running on http://localhost:5000");
     });
   } catch (err) {
     console.error("Error connecting to MongoDB:", err);
@@ -90,10 +90,21 @@ app.put("/transactions/:id", async (req, res) => {
     const id = req.params.id;
     const update = req.body;
     delete update._id; // Prevent _id overwrite
-    const result = await transactionsCollection.updateOne(
-      { _id: new ObjectId(id) },
-      { $set: update }
-    );
+    let result = { matchedCount: 0 };
+    // Try ObjectId if possible
+    if (/^[a-fA-F0-9]{24}$/.test(id)) {
+      result = await transactionsCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: update }
+      );
+    }
+    // If not matched, try as string
+    if (result.matchedCount === 0) {
+      result = await transactionsCollection.updateOne(
+        { _id: id },
+        { $set: update }
+      );
+    }
     if (result.matchedCount === 0) {
       return res.status(404).json({ message: "Transaction not found." });
     }
@@ -101,6 +112,29 @@ app.put("/transactions/:id", async (req, res) => {
   } catch (err) {
     console.error("Error updating transaction:", err);
     res.status(500).send("Error updating transaction.");
+  }
+});
+
+// Delete a transaction by ID
+app.delete("/transactions/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    let result = { deletedCount: 0 };
+    // Try ObjectId if possible
+    if (/^[a-fA-F0-9]{24}$/.test(id)) {
+      result = await transactionsCollection.deleteOne({ _id: new ObjectId(id) });
+    }
+    // If not matched, try as string
+    if (result.deletedCount === 0) {
+      result = await transactionsCollection.deleteOne({ _id: id });
+    }
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: "Transaction not found." });
+    }
+    res.status(200).json({ message: "Transaction deleted successfully." });
+  } catch (err) {
+    console.error("Error deleting transaction:", err);
+    res.status(500).send("Error deleting transaction.");
   }
 });
 

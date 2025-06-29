@@ -9,6 +9,16 @@ import "primereact/resources/themes/lara-light-blue/theme.css";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
 
+const CATEGORY_OPTIONS = [
+  "Food",
+  "Tour",
+  "Parking",
+  "Shopping",
+  "Online",
+  "Other",
+  "Travel"
+];
+
 const Budget = () => {
   const [budgets, setBudgets] = useState([]);
   const [newCategory, setNewCategory] = useState("");
@@ -23,7 +33,12 @@ const Budget = () => {
     fetch("https://us-central1-exp-t-7a56d.cloudfunctions.net/api/budgets")
       .then((response) => response.json())
       .then((budgetsData) => {
-        setBudgets(budgetsData);
+        // Only keep streamlined categories, fill missing with default
+        const defaultBudgets = CATEGORY_OPTIONS.map(cat => {
+          const found = budgetsData.find(b => b.name && b.name.toLowerCase() === cat.toLowerCase());
+          return found || { name: cat, budget: 0 };
+        });
+        setBudgets(defaultBudgets);
         setLoading(false);
         // Fetch transactions for the current month
         fetch("https://us-central1-exp-t-7a56d.cloudfunctions.net/api/transactions")
@@ -37,7 +52,8 @@ const Budget = () => {
             transactions.forEach((t) => {
               const d = new Date(t.date);
               if (d.getMonth() === month && d.getFullYear() === year) {
-                spend[t.category] = (spend[t.category] || 0) + t.amount;
+                const cat = t.category && typeof t.category === 'string' ? t.category : '';
+                spend[cat] = (spend[cat] || 0) + t.amount;
               }
             });
             setCategorySpend(spend);
@@ -52,30 +68,24 @@ const Budget = () => {
     setBudgets(updatedBudgets);
   };
 
-  const handleAddCategory = () => {
-    if (newCategory && newBudget) {
-      const updatedBudgets = [
-        ...budgets,
-        { name: newCategory.toLowerCase(), budget: parseInt(newBudget, 10) },
-      ];
-      setBudgets(updatedBudgets);
-      setNewCategory("");
-      setNewBudget(0);
-      setShowModal(false);
-      saveBudgetsToBackend(updatedBudgets);
-    }
-  };
-
   const handleSave = () => {
     saveBudgetsToBackend(budgets);
   };
 
   const saveBudgetsToBackend = (updatedBudgets) => {
-    fetch("https://us-central1-exp-t-7a56d.cloudfunctions.net/api/save_budgets", {
+    fetch("http://localhost:5000/save_budgets", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updatedBudgets),
     });
+  };
+
+  // Add delete handler
+  const handleDelete = (index) => {
+    const updatedBudgets = budgets.filter((_, i) => i !== index);
+    setBudgets(updatedBudgets);
+    setEditIdx(null);
+    saveBudgetsToBackend(updatedBudgets);
   };
 
   return (
@@ -93,7 +103,7 @@ const Budget = () => {
       <div
         style={{
           display: "flex",
-          flexWrap: "wrap",
+          flexDirection: "column",
           gap: 10,
           marginBottom: 16,
         }}
@@ -105,34 +115,43 @@ const Budget = () => {
             if (!budget || !budget.name) return null;
             const spent = categorySpend[budget.name] || 0;
             const percent = budget.budget > 0 ? Math.min(100, Math.round((spent / budget.budget) * 100)) : 0;
+            const isEditing = editIdx === idx;
             return (
               <Card
                 key={budget.name}
-                style={{ minWidth: 120, flex: 1, borderRadius: 10, boxShadow: "0 1px 4px #e0e0e0", padding: 0 }}
+                style={{ borderRadius: 10, boxShadow: "0 1px 4px #e0e0e0", padding: '10px 14px', margin: 0, maxWidth: 440 }}
               >
-                <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>
-                  {typeof budget.name === 'string' ? budget.name.charAt(0).toUpperCase() + budget.name.slice(1) : ''}
+                {/* First row: category name (left), progress bar + percent (right) */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <div style={{ fontWeight: 600, fontSize: 15 }}>
+                    {typeof budget.name === 'string' ? budget.name.charAt(0).toUpperCase() + budget.name.slice(1) : ''}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 120 }}>
+                    <ProgressBar value={percent} showValue={false} style={{ height: 8, borderRadius: 6, width: 70 }} color={percent >= 100 ? '#d32f2f' : '#43a047'} />
+                    <span style={{ fontSize: 12, color: percent >= 100 ? '#d32f2f' : '#888', minWidth: 32, textAlign: 'right' }}>{percent}%</span>
+                  </div>
                 </div>
-                <div style={{ fontSize: 13, marginBottom: 4 }}>
-                  Budget: <span style={{ fontWeight: 600 }}>₹{budget.budget}</span>
+                {/* Second row: spent (left), budget (right) */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isEditing ? 0 : 2 }}>
+                  <div style={{ fontSize: 13 }}>
+                    Spent: <span style={{ fontWeight: 600, color: percent >= 100 ? '#d32f2f' : '#43a047' }}>₹{spent}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    {!isEditing ? (
+                      <>
+                        <span style={{ fontWeight: 600 }}>₹{budget.budget}</span>
+                        <Button icon="pi pi-pencil" className="p-button-text p-button-sm" onClick={() => setEditIdx(idx)} style={{ marginLeft: 4 }} aria-label="Edit" />
+                      </>
+                    ) : null}
+                  </div>
                 </div>
-                <div style={{ fontSize: 13, marginBottom: 4 }}>
-                  Spent: <span style={{ fontWeight: 600, color: percent >= 100 ? '#d32f2f' : '#43a047' }}>₹{spent}</span>
-                </div>
-                <ProgressBar value={percent} showValue={false} style={{ height: 8, borderRadius: 6, marginBottom: 4 }} color={percent >= 100 ? '#d32f2f' : '#43a047'} />
-                <div style={{ fontSize: 12, color: percent >= 100 ? '#d32f2f' : '#888' }}>{percent}% used</div>
-                <Button icon="pi pi-pencil" className="p-button-text p-button-sm" style={{ marginTop: 8 }} onClick={() => setEditIdx(idx)} />
-                {editIdx === idx && (
-                  <div style={{ marginTop: 8 }}>
-                    <InputNumber
-                      value={budget.budget}
-                      onValueChange={(e) => handleBudgetChange(idx, e.value)}
-                      mode="decimal"
-                      showButtons
-                      min={0}
-                      style={{ width: "100%" }}
-                    />
-                    <Button label="Save" icon="pi pi-save" className="p-button-success p-button-sm" style={{ marginTop: 4, width: '100%' }} onClick={handleSave} />
+                {/* Edit row: only if editing */}
+                {isEditing && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, justifyContent: 'flex-end' }}>
+                    <InputNumber value={budget.budget} onValueChange={(e) => handleBudgetChange(idx, e.value)} mode="decimal" min={0} style={{ width: 80 }} autoFocus />
+                    <Button icon="pi pi-check" className="p-button-success p-button-sm" onClick={() => { handleSave(); setEditIdx(null); }} style={{ minWidth: 32, padding: '4px 8px' }} aria-label="Save" />
+                    <Button icon="pi pi-times" className="p-button-text p-button-sm" onClick={() => setEditIdx(null)} style={{ minWidth: 32, padding: '4px 8px' }} aria-label="Cancel" />
+                    <Button icon="pi pi-trash" className="p-button-danger p-button-sm" onClick={() => handleDelete(idx)} style={{ minWidth: 32, padding: '4px 8px' }} aria-label="Delete" />
                   </div>
                 )}
               </Card>
@@ -148,46 +167,7 @@ const Budget = () => {
           className="p-button-success"
           style={{ flex: 1 }}
         />
-        <Button
-          label="Add Category"
-          icon="pi pi-plus"
-          onClick={() => setShowModal(true)}
-          className="p-button-info"
-          style={{ flex: 1 }}
-        />
       </div>
-      <Dialog
-        header="Add New Category"
-        visible={showModal}
-        style={{ width: "90vw", maxWidth: 320 }}
-        onHide={() => setShowModal(false)}
-      >
-        <div className="p-fluid">
-          <div className="p-field">
-            <label>Category Name</label>
-            <InputText
-              value={newCategory}
-              onChange={(e) => setNewCategory(e.target.value)}
-            />
-          </div>
-          <div className="p-field">
-            <label>Budget</label>
-            <InputNumber
-              value={newBudget}
-              onValueChange={(e) => setNewBudget(e.value)}
-              mode="decimal"
-              min={0}
-            />
-          </div>
-          <Button
-            label="Add"
-            icon="pi pi-check"
-            onClick={handleAddCategory}
-            className="p-button-success"
-            style={{ marginTop: 8 }}
-          />
-        </div>
-      </Dialog>
     </div>
   );
 };

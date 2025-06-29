@@ -90,7 +90,7 @@ const TransactionList = ({ transactions, user }) => {
   };
 
   useEffect(() => {
-    fetch("https://us-central1-exp-t-7a56d.cloudfunctions.net/api/budgets")
+    fetch("http://localhost:5000/budgets")
       .then(res => res.json())
       .then(data => setCategories(data.map(b => b.name)));
   }, []);
@@ -113,7 +113,7 @@ const TransactionList = ({ transactions, user }) => {
       tags: editTags.split(",").map(t => t.trim()).filter(Boolean),
     };
     // PATCH/PUT not implemented in backend, so use POST to a new endpoint or update logic here
-    await fetch(`https://us-central1-exp-t-7a56d.cloudfunctions.net/api/transactions/${editModal.transaction._id}`, {
+    await fetch(`http://localhost:5000/transactions/${editModal.transaction._id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updated),
@@ -121,6 +121,15 @@ const TransactionList = ({ transactions, user }) => {
     setEditLoading(false);
     setEditModal({ open: false, transaction: null, idx: null });
     window.location.reload(); // For now, reload to refresh data
+  };
+
+  // Add delete handler
+  const handleDeleteTransaction = async (transaction) => {
+    if (!window.confirm('Delete this transaction?')) return;
+    await fetch(`https://us-central1-exp-t-7a56d.cloudfunctions.net/api/transactions/${transaction._id}`, {
+      method: 'DELETE',
+    });
+    window.location.reload(); // Or refetch transactions if you want a better UX
   };
 
   return (
@@ -211,7 +220,10 @@ const TransactionList = ({ transactions, user }) => {
             <label>Tags (comma separated)</label>
             <InputText value={editTags} onChange={e => setEditTags(e.target.value)} style={{ width: '100%' }} />
           </div>
-          <Button label="Save" icon="pi pi-check" onClick={handleEditSave} loading={editLoading} className="p-button-success" style={{ width: '100%' }} />
+          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+            <Button label="Save" icon="pi pi-check" onClick={handleEditSave} loading={editLoading} className="p-button-success" style={{ flex: 1 }} />
+            <Button icon="pi pi-trash" className="p-button-danger" style={{ minWidth: 40 }} onClick={() => handleDeleteTransaction(editModal.transaction)} aria-label="Delete" />
+          </div>
         </div>
       </Dialog>
     </div>
