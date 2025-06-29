@@ -173,15 +173,7 @@ const Budget = () => {
           })
         )}
       </div>
-      <div style={{ display: "flex", gap: 8 }}>
-        <Button
-          label="Save"
-          icon="pi pi-save"
-          onClick={handleSave}
-          className="p-button-success"
-          style={{ flex: 1 }}
-        />
-      </div>
+      
     </div>
   );
 };
