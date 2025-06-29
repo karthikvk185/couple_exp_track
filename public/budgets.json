@@ -1,0 +1,7 @@
+[
+    { "name": "food", "budget": 1000 },
+    { "name": "parking", "budget": 500 },
+    { "name": "shopping", "budget": 1500 },
+    { "name": "trip", "budget": 2000 },
+    { "name": "other", "budget": 300 }
+  ]

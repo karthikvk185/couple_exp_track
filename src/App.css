@@ -13,6 +13,13 @@
   }
 }
 
+.p-card .p-card-content {
+    padding: .2rem 1.25rem !important;
+}
+.p-card .p-card-body {
+    padding: 0 1.25rem !important;
+}
+
 .App-header {
   background-color: #282c34;
   min-height: 100vh;
