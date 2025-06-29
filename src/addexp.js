@@ -22,7 +22,7 @@ const AddExpense = () => {
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    fetch("http://localhost:5000/budgets")
+    fetch("https://us-central1-exp-t-7a56d.cloudfunctions.net/api/budgets")
       .then((res) => res.json())
       .then((data) => {
         setCategories(data.map((b) => b.name));
@@ -40,7 +40,7 @@ const AddExpense = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!amount || !category) return;
-    fetch("http://localhost:5000/transactions", {
+    fetch("https://us-central1-exp-t-7a56d.cloudfunctions.net/api/transactions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

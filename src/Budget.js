@@ -20,13 +20,13 @@ const Budget = () => {
 
   useEffect(() => {
     // Fetch budgets
-    fetch("http://localhost:5000/budgets")
+    fetch("https://us-central1-exp-t-7a56d.cloudfunctions.net/api/budgets")
       .then((response) => response.json())
       .then((budgetsData) => {
         setBudgets(budgetsData);
         setLoading(false);
         // Fetch transactions for the current month
-        fetch("http://localhost:5000/transactions")
+        fetch("https://us-central1-exp-t-7a56d.cloudfunctions.net/api/transactions")
           .then((response) => response.json())
           .then((transactions) => {
             // Calculate spend per category for the current month
@@ -71,7 +71,7 @@ const Budget = () => {
   };
 
   const saveBudgetsToBackend = (updatedBudgets) => {
-    fetch("http://localhost:5000/save_budgets", {
+    fetch("https://us-central1-exp-t-7a56d.cloudfunctions.net/api/save_budgets", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updatedBudgets),

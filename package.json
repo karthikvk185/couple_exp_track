@@ -8,6 +8,9 @@
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^13.5.0",
     "cors": "^2.8.5",
+    "firebase": "^11.9.1",
+    "firebase-admin": "^13.4.0",
+    "firebase-functions": "^6.3.2",
     "mongodb": "^6.17.0",
     "primeicons": "^7.0.0",
     "primereact": "^10.9.6",
@@ -16,6 +19,9 @@
     "react-router-dom": "^7.6.2",
     "react-scripts": "5.0.1",
     "web-vitals": "^2.1.4"
+  },
+  "engines": {
+    "node": "22"
   },
   "scripts": {
     "start": "react-scripts start",
