@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { BrowserRouter as Router, Route, Routes, Link } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes, Link, useLocation, useNavigate } from "react-router-dom";
 import AddExpense from "./addexp";
 import TransactionList from "./TransactionList";
 import Budget from "./Budget";
@@ -7,6 +7,23 @@ import { Button } from "primereact/button";
 import "primereact/resources/themes/lara-light-blue/theme.css";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
+import "./App.css";
+
+function Navbar() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  // Show back button except on dashboard
+  const showBack = location.pathname !== "/";
+  return (
+    <div className="navbar-cet">
+      {showBack ? (
+        <Button icon="pi pi-arrow-left" className="p-button-text p-button-lg" onClick={() => navigate(-1)} style={{ color: '#fff', fontSize: 22, marginRight: 8 }} aria-label="Back" />
+      ) : <span style={{ width: 44, display: 'inline-block' }} />} {/* placeholder for alignment */}
+      <span className="navbar-title">Couple Expense Tracker</span>
+      <span style={{ width: 44, display: 'inline-block' }} /> {/* right placeholder */}
+    </div>
+  );
+}
 
 function Dashboard() {
   return (
@@ -51,6 +68,7 @@ function App() {
   return (
     <Router>
       <div className="App">
+        <Navbar />
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/add_expense" element={<AddExpense />} />
