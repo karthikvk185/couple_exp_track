@@ -10,7 +10,7 @@ import "primereact/resources/themes/lara-light-blue/theme.css";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
 
-const AddExpense = () => {
+const AddExpense = ({ user }) => {
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(new Date());
   const [category, setCategory] = useState("");
@@ -49,6 +49,7 @@ const AddExpense = () => {
         category,
         remarks,
         tags,
+        user: user || undefined,
       }),
     }).then(() => {
       setSuccess(true);

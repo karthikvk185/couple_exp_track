@@ -1,15 +1,26 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card } from "primereact/card";
 import { Button } from "primereact/button";
 import { Tag } from "primereact/tag";
 import { Panel } from "primereact/panel";
+import { Dialog } from "primereact/dialog";
+import { InputNumber } from "primereact/inputnumber";
+import { InputText } from "primereact/inputtext";
+import { Dropdown } from "primereact/dropdown";
 import "primereact/resources/themes/lara-light-blue/theme.css";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
 
-const TransactionList = ({ transactions }) => {
+const TransactionList = ({ transactions, user }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showCategoryBudget, setShowCategoryBudget] = useState(false);
+  const [editModal, setEditModal] = useState({ open: false, transaction: null, idx: null });
+  const [editAmount, setEditAmount] = useState(0);
+  const [editCategory, setEditCategory] = useState("");
+  const [editRemarks, setEditRemarks] = useState("");
+  const [editTags, setEditTags] = useState("");
+  const [editLoading, setEditLoading] = useState(false);
+  const [categories, setCategories] = useState([]);
 
   const currentMonthName = currentMonth.toLocaleString("default", { month: "long" });
   const currentYear = currentMonth.getFullYear();
@@ -37,6 +48,16 @@ const TransactionList = ({ transactions }) => {
     acc[category] = (acc[category] || 0) + amount;
     return acc;
   }, {});
+
+  // Calculate total spent by user (if user info exists)
+  const userTotal = user
+    ? filteredTransactions.filter(t => t.user === user).reduce((sum, t) => sum + t.amount, 0)
+    : null;
+  // Calculate total spent by the other user
+  const otherUser = user === "kpalan551" ? "ramas2025" : user === "ramas2025" ? "kpalan551" : null;
+  const otherUserTotal = otherUser
+    ? filteredTransactions.filter(t => t.user === otherUser).reduce((sum, t) => sum + t.amount, 0)
+    : null;
 
   const previousMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
   const hasPreviousMonthData = transactions.some((transaction) => {
@@ -68,6 +89,40 @@ const TransactionList = ({ transactions }) => {
     setShowCategoryBudget((prev) => !prev);
   };
 
+  useEffect(() => {
+    fetch("https://us-central1-exp-t-7a56d.cloudfunctions.net/api/budgets")
+      .then(res => res.json())
+      .then(data => setCategories(data.map(b => b.name)));
+  }, []);
+
+  const openEdit = (transaction, idx) => {
+    setEditModal({ open: true, transaction, idx });
+    setEditAmount(transaction.amount);
+    setEditCategory(transaction.category);
+    setEditRemarks(transaction.remarks || "");
+    setEditTags(transaction.tags ? transaction.tags.join(", ") : "");
+  };
+
+  const handleEditSave = async () => {
+    setEditLoading(true);
+    const updated = {
+      ...editModal.transaction,
+      amount: editAmount,
+      category: editCategory,
+      remarks: editRemarks,
+      tags: editTags.split(",").map(t => t.trim()).filter(Boolean),
+    };
+    // PATCH/PUT not implemented in backend, so use POST to a new endpoint or update logic here
+    await fetch(`https://us-central1-exp-t-7a56d.cloudfunctions.net/api/transactions/${editModal.transaction._id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updated),
+    });
+    setEditLoading(false);
+    setEditModal({ open: false, transaction: null, idx: null });
+    window.location.reload(); // For now, reload to refresh data
+  };
+
   return (
     <div style={{ maxWidth: 480, margin: "0 auto", padding: 8 }}>
       {/* Month Navigation */}
@@ -81,6 +136,16 @@ const TransactionList = ({ transactions }) => {
         <div style={{ textAlign: "left" }}>
           <div style={{ fontSize: 14, color: '#888' }}>Total Spend</div>
           <div style={{ fontWeight: 700, fontSize: 18, color: '#2196F3' }}>₹{totalSpend}</div>
+          {user && (
+            <div style={{ fontSize: 13, color: '#888', marginTop: 2 }}>
+              Your Total: <span style={{ color: '#43a047', fontWeight: 600 }}>₹{userTotal}</span>
+              {otherUser && (
+                <span style={{ marginLeft: 12 }}>
+                  {otherUser === "kpalan551" ? "Karthik" : "Rama"} Total: <span style={{ color: '#f06292', fontWeight: 600 }}>₹{otherUserTotal}</span>
+                </span>
+              )}
+            </div>
+          )}
         </div>
         <div style={{ textAlign: "right" }}>
           <Button icon={showCategoryBudget ? "pi pi-chevron-up" : "pi pi-chevron-down"} className="p-button-text" onClick={toggleCategoryBudget} style={{ fontSize: 14, padding: 0, marginRight: 4 }} />
@@ -107,7 +172,9 @@ const TransactionList = ({ transactions }) => {
           {groupedTransactions[date].map((transaction, idx) => (
             <Card key={idx} style={{ marginBottom: 8, borderRadius: 10, boxShadow: '0 1px 4px #e0e0e0', padding: 0 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 16, fontWeight: 600 }}>
-                <span style={{ color: '#43a047' }}>₹{transaction.amount}</span>
+                <span style={{ color: '#43a047', display: 'flex', alignItems: 'center' }}>₹{transaction.amount}
+                  <Button icon="pi pi-pencil" className="p-button-text p-button-sm" style={{ marginLeft: 6 }} onClick={() => openEdit(transaction, idx)} />
+                </span>
                 <Tag value={transaction.category} severity="success" style={{ fontSize: 13, borderRadius: 6, padding: '2px 8px' }} />
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, marginTop: 2 }}>
@@ -126,6 +193,27 @@ const TransactionList = ({ transactions }) => {
           ))}
         </div>
       ))}
+      <Dialog header="Edit Transaction" visible={editModal.open} style={{ width: '90vw', maxWidth: 340 }} onHide={() => setEditModal({ open: false, transaction: null, idx: null })}>
+        <div className="p-fluid">
+          <div className="p-field">
+            <label>Amount</label>
+            <InputNumber value={editAmount} onValueChange={e => setEditAmount(e.value)} mode="decimal" min={0} style={{ width: '100%' }} />
+          </div>
+          <div className="p-field">
+            <label>Category</label>
+            <Dropdown value={editCategory} options={categories} onChange={e => setEditCategory(e.value)} placeholder="Select category" style={{ width: '100%' }} />
+          </div>
+          <div className="p-field">
+            <label>Remarks</label>
+            <InputText value={editRemarks} onChange={e => setEditRemarks(e.target.value)} style={{ width: '100%' }} />
+          </div>
+          <div className="p-field">
+            <label>Tags (comma separated)</label>
+            <InputText value={editTags} onChange={e => setEditTags(e.target.value)} style={{ width: '100%' }} />
+          </div>
+          <Button label="Save" icon="pi pi-check" onClick={handleEditSave} loading={editLoading} className="p-button-success" style={{ width: '100%' }} />
+        </div>
+      </Dialog>
     </div>
   );
 };

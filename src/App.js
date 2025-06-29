@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { BrowserRouter as Router, Route, Routes, Link, useLocation, useNavigate } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes, Link, useLocation, useNavigate, Navigate } from "react-router-dom";
 import AddExpense from "./addexp";
 import TransactionList from "./TransactionList";
 import Budget from "./Budget";
@@ -9,11 +9,15 @@ import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
 import "./App.css";
 
+const USERS = [
+  { username: "kpalan551", password: "10429123" },
+  { username: "ramas2025", password: "2025rama" },
+];
+
 function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
-  // Show back button except on dashboard
-  const showBack = location.pathname !== "/";
+  const showBack = location.pathname !== "/" && location.pathname !== "/login";
   return (
     <div className="navbar-cet">
       {showBack ? (
@@ -21,6 +25,38 @@ function Navbar() {
       ) : <span style={{ width: 44, display: 'inline-block' }} />} {/* placeholder for alignment */}
       <span className="navbar-title">Couple Expense Tracker</span>
       <span style={{ width: 44, display: 'inline-block' }} /> {/* right placeholder */}
+    </div>
+  );
+}
+
+function Login({ onLogin }) {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const user = USERS.find(u => u.username === username && u.password === password);
+    if (user) {
+      onLogin(user.username);
+    } else {
+      setError("Invalid username or password");
+    }
+  };
+
+  return (
+    <div style={{ maxWidth: 340, margin: "40px auto", padding: 24 }}>
+      <h3 style={{ textAlign: "center", marginBottom: 24 }}>Login</h3>
+      <form onSubmit={handleSubmit}>
+        <div className="p-field" style={{ marginBottom: 16 }}>
+          <input className="p-inputtext" style={{ width: '100%' }} placeholder="Username" value={username} onChange={e => setUsername(e.target.value)} />
+        </div>
+        <div className="p-field" style={{ marginBottom: 16 }}>
+          <input className="p-inputtext" style={{ width: '100%' }} type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />
+        </div>
+        {error && <div style={{ color: '#d32f2f', marginBottom: 12 }}>{error}</div>}
+        <Button label="Login" icon="pi pi-sign-in" type="submit" style={{ width: '100%' }} />
+      </form>
     </div>
   );
 }
@@ -44,12 +80,18 @@ function Dashboard() {
   );
 }
 
+function PrivateRoute({ user, children }) {
+  return user ? children : <Navigate to="/login" replace />;
+}
+
 function App() {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [user, setUser] = useState(() => localStorage.getItem("cet_user") || "");
 
   useEffect(() => {
+    if (!user) return;
     fetch("https://us-central1-exp-t-7a56d.cloudfunctions.net/api/transactions")
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch transactions");
@@ -63,19 +105,33 @@ function App() {
         setError(err.message);
         setLoading(false);
       });
-  }, []);
+  }, [user]);
+
+  const handleLogin = (username) => {
+    setUser(username);
+    localStorage.setItem("cet_user", username);
+    window.location.href = "/"; // Always navigate to dashboard after login
+  };
+  const handleLogout = () => {
+    setUser("");
+    localStorage.removeItem("cet_user");
+  };
 
   return (
     <Router>
       <div className="App">
         <Navbar />
+        {user && <Button label="Logout" icon="pi pi-sign-out" className="p-button-text" style={{ position: 'absolute', right: 12, top: 62, zIndex: 200 }} onClick={handleLogout} />}
         <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/add_expense" element={<AddExpense />} />
+          <Route path="/login" element={<Login onLogin={handleLogin} />} />
+          <Route path="/" element={<PrivateRoute user={user}><Dashboard /></PrivateRoute>} />
+          <Route path="/add_expense" element={<PrivateRoute user={user}><AddExpense user={user} /></PrivateRoute>} />
           <Route path="/transactions" element={
-            loading ? <div>Loading...</div> : error ? <div>Error: {error}</div> : <TransactionList transactions={transactions} />
+            <PrivateRoute user={user}>
+              {loading ? <div>Loading...</div> : error ? <div>Error: {error}</div> : <TransactionList transactions={transactions} user={user} />}
+            </PrivateRoute>
           } />
-          <Route path="/budget" element={<Budget />} />
+          <Route path="/budget" element={<PrivateRoute user={user}><Budget /></PrivateRoute>} />
         </Routes>
       </div>
     </Router>

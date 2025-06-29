@@ -1,5 +1,5 @@
 const express = require("express");
-const { MongoClient } = require("mongodb");
+const { MongoClient, ObjectId } = require("mongodb");
 const cors = require("cors");
 const functions = require("firebase-functions");
 const app = express();
@@ -81,6 +81,26 @@ app.post("/transactions", async (req, res) => {
   } catch (err) {
     console.error("Error adding transaction:", err);
     res.status(500).send("Error adding transaction.");
+  }
+});
+
+// Update a transaction by ID
+app.put("/transactions/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const update = req.body;
+    delete update._id; // Prevent _id overwrite
+    const result = await transactionsCollection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: update }
+    );
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ message: "Transaction not found." });
+    }
+    res.status(200).json({ message: "Transaction updated successfully." });
+  } catch (err) {
+    console.error("Error updating transaction:", err);
+    res.status(500).send("Error updating transaction.");
   }
 });
 
