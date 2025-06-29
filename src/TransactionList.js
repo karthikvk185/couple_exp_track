@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card } from "primereact/card";
 import { Button } from "primereact/button";
 import { Tag } from "primereact/tag";
@@ -7,6 +7,7 @@ import { Dialog } from "primereact/dialog";
 import { InputNumber } from "primereact/inputnumber";
 import { InputText } from "primereact/inputtext";
 import { Dropdown } from "primereact/dropdown";
+import { Toast } from "primereact/toast";
 import "primereact/resources/themes/lara-light-blue/theme.css";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
@@ -21,6 +22,7 @@ const TransactionList = ({ transactions, user }) => {
   const [editTags, setEditTags] = useState("");
   const [editLoading, setEditLoading] = useState(false);
   const [categories, setCategories] = useState([]);
+  const toast = useRef(null);
 
   const currentMonthName = currentMonth.toLocaleString("default", { month: "long" });
   const currentYear = currentMonth.getFullYear();
@@ -112,28 +114,47 @@ const TransactionList = ({ transactions, user }) => {
       remarks: editRemarks,
       tags: editTags.split(",").map(t => t.trim()).filter(Boolean),
     };
-    // PATCH/PUT not implemented in backend, so use POST to a new endpoint or update logic here
-    await fetch(`https://us-central1-exp-t-7a56d.cloudfunctions.net/api/transactions/${editModal.transaction._id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updated),
-    });
-    setEditLoading(false);
-    setEditModal({ open: false, transaction: null, idx: null });
-    window.location.reload(); // For now, reload to refresh data
+    try {
+      const res = await fetch(`https://us-central1-exp-t-7a56d.cloudfunctions.net/api/transactions/${editModal.transaction._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updated),
+      });
+      setEditLoading(false);
+      setEditModal({ open: false, transaction: null, idx: null });
+      if (res.ok) {
+        toast.current?.show({ severity: 'success', summary: 'Success', detail: 'Transaction updated', life: 2000 });
+        window.location.reload();
+      } else {
+        toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to update transaction', life: 3000 });
+      }
+    } catch {
+      setEditLoading(false);
+      toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to update transaction', life: 3000 });
+    }
   };
 
   // Add delete handler
   const handleDeleteTransaction = async (transaction) => {
     if (!window.confirm('Delete this transaction?')) return;
-    await fetch(`https://us-central1-exp-t-7a56d.cloudfunctions.net/api/transactions/${transaction._id}`, {
-      method: 'DELETE',
-    });
-    window.location.reload(); // Or refetch transactions if you want a better UX
+    try {
+      const res = await fetch(`https://us-central1-exp-t-7a56d.cloudfunctions.net/api/transactions/${transaction._id}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        toast.current?.show({ severity: 'success', summary: 'Deleted', detail: 'Transaction deleted', life: 2000 });
+        window.location.reload();
+      } else {
+        toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to delete transaction', life: 3000 });
+      }
+    } catch {
+      toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to delete transaction', life: 3000 });
+    }
   };
 
   return (
     <div style={{ maxWidth: 480, margin: "0 auto", padding: 8 }}>
+      <Toast ref={toast} position="top-center" />
       {/* Month Navigation */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8 }}>
         <Button icon="pi pi-angle-left" className="p-button-text" onClick={handlePreviousMonth} disabled={!hasPreviousMonthData} style={{ fontSize: 18 }} />

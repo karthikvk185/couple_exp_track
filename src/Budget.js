@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card } from "primereact/card";
 import { Button } from "primereact/button";
 import { Dialog } from "primereact/dialog";
 import { InputText } from "primereact/inputtext";
 import { InputNumber } from "primereact/inputnumber";
 import { ProgressBar } from "primereact/progressbar";
+import { Toast } from "primereact/toast";
 import "primereact/resources/themes/lara-light-blue/theme.css";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
@@ -27,6 +28,7 @@ const Budget = () => {
   const [loading, setLoading] = useState(true);
   const [categorySpend, setCategorySpend] = useState({});
   const [editIdx, setEditIdx] = useState(null);
+  const toast = useRef(null);
 
   useEffect(() => {
     // Fetch budgets
@@ -44,7 +46,7 @@ const Budget = () => {
         fetch("https://us-central1-exp-t-7a56d.cloudfunctions.net/api/transactions")
           .then((response) => response.json())
           .then((transactions) => {
-            // Calculate spend per category for the current month
+            // Calculate spend per category for the current month (case-insensitive)
             const now = new Date();
             const month = now.getMonth();
             const year = now.getFullYear();
@@ -52,7 +54,7 @@ const Budget = () => {
             transactions.forEach((t) => {
               const d = new Date(t.date);
               if (d.getMonth() === month && d.getFullYear() === year) {
-                const cat = t.category && typeof t.category === 'string' ? t.category : '';
+                const cat = t.category && typeof t.category === 'string' ? t.category.toLowerCase() : '';
                 spend[cat] = (spend[cat] || 0) + t.amount;
               }
             });
@@ -77,7 +79,17 @@ const Budget = () => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updatedBudgets),
-    });
+    })
+      .then((res) => {
+        if (res.ok) {
+          toast.current?.show({ severity: 'success', summary: 'Success', detail: 'Budgets updated', life: 2000 });
+        } else {
+          toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to update budgets', life: 3000 });
+        }
+      })
+      .catch(() => {
+        toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to update budgets', life: 3000 });
+      });
   };
 
   // Add delete handler
@@ -86,10 +98,12 @@ const Budget = () => {
     setBudgets(updatedBudgets);
     setEditIdx(null);
     saveBudgetsToBackend(updatedBudgets);
+    toast.current?.show({ severity: 'success', summary: 'Deleted', detail: 'Budget deleted', life: 2000 });
   };
 
   return (
     <div style={{ maxWidth: 480, margin: "0 auto", padding: 8 }}>
+      <Toast ref={toast} position="top-center" />
       <div
         style={{
           fontWeight: 600,
@@ -119,7 +133,7 @@ const Budget = () => {
             return (
               <Card
                 key={budget.name}
-                style={{ borderRadius: 10, boxShadow: "0 1px 4px #e0e0e0", padding: '10px 14px', margin: 0, maxWidth: 440 }}
+                style={{ borderRadius: 10, boxShadow: "0 1px 4px #e0e0e0", padding: '5px 0', margin: 0, maxWidth: 440 }}
               >
                 {/* First row: category name (left), progress bar + percent (right) */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>

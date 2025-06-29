@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card } from "primereact/card";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
@@ -6,6 +6,7 @@ import { InputNumber } from "primereact/inputnumber";
 import { Calendar } from "primereact/calendar";
 import { Dropdown } from "primereact/dropdown";
 import { Tag } from "primereact/tag";
+import { Toast } from "primereact/toast";
 import "primereact/resources/themes/lara-light-blue/theme.css";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
@@ -30,6 +31,7 @@ const AddExpense = ({ user }) => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [success, setSuccess] = useState(false);
+  const toast = useRef(null);
 
   useEffect(() => {
     setCategories(CATEGORY_OPTIONS);
@@ -57,19 +59,29 @@ const AddExpense = ({ user }) => {
         tags,
         user: user || undefined,
       }),
-    }).then(() => {
-      setSuccess(true);
-      setAmount("");
-      setDate(new Date());
-      setCategory("");
-      setRemarks("");
-      setTags([]);
-      setTimeout(() => setSuccess(false), 2000);
-    });
+    })
+      .then((res) => {
+        if (res.ok) {
+          setSuccess(true);
+          setAmount("");
+          setDate(new Date());
+          setCategory("");
+          setRemarks("");
+          setTags([]);
+          toast.current?.show({ severity: 'success', summary: 'Success', detail: 'Expense added', life: 2000 });
+          setTimeout(() => setSuccess(false), 2000);
+        } else {
+          toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to add expense', life: 3000 });
+        }
+      })
+      .catch(() => {
+        toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to add expense', life: 3000 });
+      });
   };
 
   return (
     <div style={{ maxWidth: 480, margin: "0 auto", padding: 8 }}>
+      <Toast ref={toast} position="top-center" />
       <Card title="Add Expense" style={{ borderRadius: 10, boxShadow: '0 1px 4px #e0e0e0', marginBottom: 16 }}>
         <form onSubmit={handleSubmit}>
           <div className="p-field" style={{ marginBottom: 12 }}>
@@ -101,7 +113,6 @@ const AddExpense = ({ user }) => {
             </div>
           </div>
           <Button label="Submit" icon="pi pi-check" type="submit" className="p-button-success" style={{ width: '100%' }} />
-          {success && <div style={{ color: '#43a047', marginTop: 10, textAlign: 'center' }}>Expense added!</div>}
         </form>
       </Card>
     </div>
