@@ -46,7 +46,7 @@ const AddExpense = ({ user }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!amount || !category) return;
-    fetch("http://localhost:5000/transactions", {
+    fetch("https://us-central1-exp-t-7a56d.cloudfunctions.net/api/transactions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

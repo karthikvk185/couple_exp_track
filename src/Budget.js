@@ -73,7 +73,7 @@ const Budget = () => {
   };
 
   const saveBudgetsToBackend = (updatedBudgets) => {
-    fetch("http://localhost:5000/save_budgets", {
+    fetch("https://us-central1-exp-t-7a56d.cloudfunctions.net/api/save_budgets", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updatedBudgets),

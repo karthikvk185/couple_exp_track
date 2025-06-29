@@ -23,7 +23,7 @@ async function connectDB() {
     transactionsCollection = db.collection("transactions"); // Store transactions in 'transactions' collection
     console.log("Connected to MongoDB successfully!");
     app.listen(5000, () => {
-      console.log("Server running on http://localhost:5000");
+      console.log("Server running on https://us-central1-exp-t-7a56d.cloudfunctions.net/api");
     });
   } catch (err) {
     console.error("Error connecting to MongoDB:", err);

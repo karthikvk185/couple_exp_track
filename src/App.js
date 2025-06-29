@@ -94,7 +94,7 @@ function App() {
 
   useEffect(() => {
     if (!user) return;
-    fetch("http://localhost:5000/transactions")
+    fetch("https://us-central1-exp-t-7a56d.cloudfunctions.net/api/transactions")
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch transactions");
         return res.json();

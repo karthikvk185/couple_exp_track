@@ -90,7 +90,7 @@ const TransactionList = ({ transactions, user }) => {
   };
 
   useEffect(() => {
-    fetch("http://localhost:5000/budgets")
+    fetch("https://us-central1-exp-t-7a56d.cloudfunctions.net/api/budgets")
       .then(res => res.json())
       .then(data => setCategories(data.map(b => b.name)));
   }, []);
@@ -113,7 +113,7 @@ const TransactionList = ({ transactions, user }) => {
       tags: editTags.split(",").map(t => t.trim()).filter(Boolean),
     };
     // PATCH/PUT not implemented in backend, so use POST to a new endpoint or update logic here
-    await fetch(`http://localhost:5000/transactions/${editModal.transaction._id}`, {
+    await fetch(`https://us-central1-exp-t-7a56d.cloudfunctions.net/api/transactions/${editModal.transaction._id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updated),
