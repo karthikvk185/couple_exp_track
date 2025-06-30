@@ -12,6 +12,16 @@ import "primereact/resources/themes/lara-light-blue/theme.css";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
 
+const CATEGORY_OPTIONS = [
+  "Food",
+  "Tour",
+  "Parking",
+  "Shopping",
+  "Online",
+  "Other",
+  "Travel"
+];
+
 const TransactionList = ({ transactions, user }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showCategoryBudget, setShowCategoryBudget] = useState(false);
@@ -92,9 +102,7 @@ const TransactionList = ({ transactions, user }) => {
   };
 
   useEffect(() => {
-    fetch("https://us-central1-exp-t-7a56d.cloudfunctions.net/api/budgets")
-      .then(res => res.json())
-      .then(data => setCategories(data.map(b => b.name)));
+    setCategories(CATEGORY_OPTIONS);
   }, []);
 
   const openEdit = (transaction, idx) => {

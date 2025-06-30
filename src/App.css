@@ -19,6 +19,11 @@
 .p-card .p-card-body {
     padding: 0 .25rem !important;
 }
+.p-field
+   {
+    padding: 10px 0;
+}
+
 
 .App-header {
   background-color: #282c34;

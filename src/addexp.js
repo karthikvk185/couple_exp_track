@@ -84,7 +84,7 @@ const AddExpense = ({ user }) => {
       <Toast ref={toast} position="top-center" />
       <Card title="Add Expense" style={{ borderRadius: 10, boxShadow: '0 1px 4px #e0e0e0', marginBottom: 16 }}>
         <form onSubmit={handleSubmit}>
-          <div className="p-field" style={{ marginBottom: 12 }}>
+          <div className="p-field">
             <label>Amount</label>
             <InputNumber value={amount} onValueChange={(e) => setAmount(e.value)} mode="decimal" min={0} style={{ width: '100%' }} required />
           </div>
